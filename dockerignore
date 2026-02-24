@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.git
+.gitignore
+reports/
+*.md
+Jenkinsfile
+test_dashboard.py

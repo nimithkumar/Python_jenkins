@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pandas
+plotly
+jinja2
+python-multipart
+
+# Testing
+pytest
+httpx
+pytest-cov
+pylint
+
+# formating
+black
+flake8
+make
