@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME        = 'covid-voters-dashboard'
+        APP_NAME        = 'covid-voters-dabatboard'
         PYTHON_VERSION  = '3.11'
         VENV_DIR        = '.venv'
         PORT            = '8000'
-        DOCKER_IMAGE    = "covid-voters-dashboard"
+        DOCKER_IMAGE    = "covid-voters-dabatboard"
         DOCKER_TAG      = "${env.BUILD_NUMBER}"
-        SONAR_PROJECT   = 'covid-voters-dashboard'
+        SONAR_PROJECT   = 'covid-voters-dabatboard'
     }
 
     options {
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 echo '📥 Checking out source code...'
                 checkout scm
-                sh 'git log --oneline -5'
+                bat 'git log --oneline -5'
             }
         }
 
@@ -37,7 +37,7 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 echo '🐍 Setting up Python virtual environment...'
-                sh """
+                bat """
                     python${PYTHON_VERSION} -m venv ${VENV_DIR}
                     . ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
@@ -54,7 +54,7 @@ pipeline {
                 stage('Flake8') {
                     steps {
                         echo '🔍 Running Flake8 linter...'
-                        sh """
+                        bat """
                             . ${VENV_DIR}/bin/activate
                             pip install flake8 --quiet
                             flake8 main.py --max-line-length=120 \
@@ -68,7 +68,7 @@ pipeline {
                 stage('Bandit Security Scan') {
                     steps {
                         echo '🔒 Running Bandit security scan...'
-                        sh """
+                        bat """
                             . ${VENV_DIR}/bin/activate
                             pip install bandit --quiet
                             bandit -r main.py -ll \
@@ -88,12 +88,12 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 echo '🧪 Running unit tests with pytest...'
-                sh """
+                bat """
                     . ${VENV_DIR}/bin/activate
                     pip install pytest pytest-cov httpx --quiet
-                    pytest test_dashboard.py \
+                    pytest test_dabatboard.py \
                         --verbose \
-                        --tb=short \
+                        --tb=batort \
                         --junitxml=reports/test-results.xml \
                         --cov=main \
                         --cov-report=xml:reports/coverage.xml \
@@ -104,11 +104,11 @@ pipeline {
             }
             post {
                 always {
-                    // Publish JUnit test results
+                    // Publibat JUnit test results
                     junit 'reports/test-results.xml'
 
-                    // Publish HTML coverage report
-                    publishHTML(target: [
+                    // Publibat HTML coverage report
+                    publibatHTML(target: [
                         allowMissing         : false,
                         alwaysLinkToLastBuild: true,
                         keepAll              : true,
@@ -133,7 +133,7 @@ pipeline {
             steps {
                 echo '📊 Running SonarQube analysis...'
                 withSonarQubeEnv('SonarQube') {
-                    sh """
+                    bat """
                         sonar-scanner \
                           -Dsonar.projectKey=${SONAR_PROJECT} \
                           -Dsonar.projectName="${APP_NAME}" \
@@ -152,7 +152,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
-                sh """
+                bat """
                     docker build \
                         -t ${DOCKER_IMAGE}:${DOCKER_TAG} \
                         -t ${DOCKER_IMAGE}:latest \
@@ -169,7 +169,7 @@ pipeline {
         stage('Smoke Test') {
             steps {
                 echo '💨 Running container smoke test...'
-                sh """
+                bat """
                     # Start container in background
                     docker run -d \
                         --name ${APP_NAME}-smoke-${BUILD_NUMBER} \
@@ -194,7 +194,7 @@ pipeline {
             }
             post {
                 always {
-                    sh """
+                    bat """
                         docker stop  ${APP_NAME}-smoke-${BUILD_NUMBER} || true
                         docker rm -f ${APP_NAME}-smoke-${BUILD_NUMBER} || true
                     """
@@ -203,10 +203,10 @@ pipeline {
         }
 
         // ─────────────────────────────────────────
-        // STAGE 8 — Push to Registry
+        // STAGE 8 — Pubat to Registry
         //          (runs only on main/release branches)
         // ─────────────────────────────────────────
-        stage('Push Docker Image') {
+        stage('Pubat Docker Image') {
             when {
                 anyOf {
                     branch 'main'
@@ -214,18 +214,18 @@ pipeline {
                 }
             }
             steps {
-                echo '📤 Pushing image to Docker registry...'
+                echo '📤 Pubating image to Docker registry...'
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-registry-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
+                    bat """
                         echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                         docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} \$DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
                         docker tag ${DOCKER_IMAGE}:latest      \$DOCKER_USER/${DOCKER_IMAGE}:latest
-                        docker push \$DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
-                        docker push \$DOCKER_USER/${DOCKER_IMAGE}:latest
+                        docker pubat \$DOCKER_USER/${DOCKER_IMAGE}:${DOCKER_TAG}
+                        docker pubat \$DOCKER_USER/${DOCKER_IMAGE}:latest
                     """
                 }
             }
@@ -238,7 +238,7 @@ pipeline {
             when { branch 'develop' }
             steps {
                 echo '🚀 Deploying to Staging...'
-                sh """
+                bat """
                     docker stop  ${APP_NAME}-staging || true
                     docker rm -f ${APP_NAME}-staging || true
                     docker run -d \
@@ -264,7 +264,7 @@ pipeline {
             }
             steps {
                 echo '🌐 Deploying to Production...'
-                sh """
+                bat """
                     docker stop  ${APP_NAME}-prod || true
                     docker rm -f ${APP_NAME}-prod || true
                     docker run -d \
@@ -286,7 +286,7 @@ pipeline {
     post {
         always {
             echo '🧹 Cleaning up workspace artifacts...'
-            sh """
+            bat """
                 # Remove dangling Docker images
                 docker image prune -f || true
                 # Remove temp containers if still running
