@@ -4,7 +4,7 @@ pipeline {
     environment {
         APP_NAME        = 'covid-voters-dabatboard'
         PYTHON_VERSION  = '3.14.3'
-        VENV_DIR        = '.venv'
+        VENV_DIR        = 'venv'
         PORT            = '8000'
         DOCKER_IMAGE    = "covid-voters-dabatboard"
         DOCKER_TAG      = "${env.BUILD_NUMBER}"
@@ -39,7 +39,7 @@ pipeline {
                 echo '🐍 Setting up Python virtual environment...'
                 bat """
                     python -m venv ${VENV_DIR}
-                    . ${VENV_DIR}/bin/activate
+                    ${VENV_DIR}/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 """
